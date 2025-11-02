@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="flappy-bird-assets-1.1.0/favicon.ico" />
+  <title>Flappy Bird</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center; /* horizontally centers */
+      align-items: center;     /* vertically centers */
+      background-color: #70c5ce; /* sky-blue background */
+    }
+
+    canvas {
+      border: 2px solid #000; /* outline */
+      border-radius: 8px;
+      image-rendering: pixelated; /* keeps retro pixel look */
+    }
+  </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="300" height="600"></canvas>
-    <script src="script.js"></script>
+  <canvas id="gameCanvas" width="300" height="570"></canvas>
+  <script src="script.js"></script>
 </body>
 </html>
