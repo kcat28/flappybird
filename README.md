@@ -7,7 +7,7 @@ A lightweight recreation of the classic game built with plain JavaScript and the
 Made purely for learning and practice.
 
 ## Credits
-- Sprites licensed under MIT from [https://github.com/samuelcust/flappy-bird-assets.git].  
+- Sprites licensed under MIT from [sprite source](https://github.com/samuelcust/flappy-bird-assets.git).
 - This project is an educational recreation and is not affiliated with .GEARS or the original Flappy Bird creators.
 
 ## License
