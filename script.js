@@ -70,10 +70,22 @@ const menuMessage = {
   height: 250,
 };
 
+const gameOverMessage = {
+  imgSrc: 'flappy-bird-assets-1.1.0/sprites/gameover.png',
+  img: null,
+  x: (canvas.width - 192) / 2,
+  y: 140,
+  width: 192,
+  height: 42,
+};
+
 // sounds-----------------------
 const sounds = {
   flap: new Audio('flappy-bird-assets-1.1.0/audio/wing.wav'),
   score: new Audio('flappy-bird-assets-1.1.0/audio/point.wav'),
+  hit: new Audio('flappy-bird-assets-1.1.0/audio/hit.wav'),
+  die: new Audio('flappy-bird-assets-1.1.0/audio/die.wav'),
+  point: new Audio('flappy-bird-assets-1.1.0/audio/point.wav'),
 };
 
 // score images / state-----------------------
@@ -87,19 +99,96 @@ const pipeSpeed = 2;
 let pipeTimer = 0;
 const pipeSpawnInterval = 90;
 
+// collision logic -----------------------
+function isColliding(rect1, rect2) {
+  return (
+    rect1.x < rect2.x + rect2.width &&
+    rect1.x + rect1.width > rect2.x &&
+    rect1.y < rect2.y + rect2.height &&
+    rect1.y + rect1.height > rect2.y
+  );
+}
+
+// collision checker-----------------------
+function checkCollisions() {
+  const birdRect = {
+    x: bird.x,
+    y: bird.y,
+    width: bird.width,
+    height: bird.height,
+  };
+
+  for (let p of pipes) {
+    const topPipeRect = {
+      x: p.x,
+      y: p.gapY - pipe.height - pipeGap / 2,
+      width: pipe.width,
+      height: pipe.height,
+    };
+    const bottomPipeRect = {
+      x: p.x,
+      y: p.gapY + pipeGap / 2,
+      width: pipe.width,
+      height: pipe.height,
+    };
+
+    if (isColliding(birdRect, topPipeRect) || isColliding(birdRect, bottomPipeRect)) {
+      return true; // collision happened
+    }
+  }
+
+  // check ground
+  if (bird.y + bird.height >= canvas.height - base.height) {
+    return true;
+  }
+
+  return false;
+}
+
 // input handling-----------------------
 function flap() {
+  if (currentState === GAME_STATE.MENU) {
+    currentState = GAME_STATE.PLAYING;
+  }
+
+  if (currentState === GAME_STATE.PLAYING) {
   bird.velocity = bird.jumpStrength;
   bird.rotation = bird.maxUpRotation;
   sounds.flap.currentTime = 0;
   sounds.flap.play();
+  }
+
+  if (currentState === GAME_STATE.GAMEOVER) {
+    resetGame();
+    currentState = GAME_STATE.MENU;
+  }
 }
 
-// attach listeners after flap is defined
+// flap listener and state manager-----------------------
 canvas.addEventListener('click', flap);
 document.addEventListener('keydown', e => {
   if (e.code === 'Space') flap();
 });
+
+//game states-----------------------
+const GAME_STATE = {
+  MENU: 'MENU',
+  PLAYING: 'PLAYING',
+  GAMEOVER: 'GAMEOVER',
+};
+let currentState = GAME_STATE.MENU;
+
+// reset game state-----------------------
+function resetGame() {
+  // reset positions & states
+  bird.y = 297;
+  bird.velocity = 0;
+  bird.rotation = 0;
+  pipes = [];
+  score = 0;
+  pipeTimer = 0;
+  createPipe();
+}
 
 // preloading sprites-----------------------
 async function sprites() {
@@ -108,6 +197,12 @@ async function sprites() {
   menuImg.src = menuMessage.imgSrc;
   await new Promise(res => menuImg.onload = res);
   menuMessage.img = menuImg;
+
+  // game over image
+  const gameOverImg = new Image();
+  gameOverImg.src = gameOverMessage.imgSrc;
+  await new Promise(res => gameOverImg.onload = res);
+  gameOverMessage.img = gameOverImg;
 
   // score digits
   for (let i = 0; i <= 9; i++) {
@@ -260,32 +355,50 @@ function updateBase() {
   }
 }
 
-// game loop-----------------------
-async function startGame() {
-  await sprites();
-  createPipe();
 
-  function gameLoop() {
+// game loop----------------------- 
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (currentState === GAME_STATE.PLAYING) {
+    // Update game only when playing
     pipeTimer++;
     if (pipeTimer > pipeSpawnInterval) {
       createPipe();
       pipeTimer = 0;
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-
     updatePipes();
     updateBase();
     updateBirdPosition();
     updateBirdAnimation();
-    drawScene();
 
-
-    requestAnimationFrame(gameLoop);
+    if (checkCollisions()) {
+      currentState = GAME_STATE.GAMEOVER;
+      sounds.hit.play();
+      sounds.die.play();
+    }
   }
 
-  gameLoop();
+  // Always draw scene
+  drawScene();
+
+  // Draw overlays for MENU or GAMEOVER
+  if (currentState === GAME_STATE.MENU) {
+    ctx.drawImage(menuMessage.img, menuMessage.x, menuMessage.y, menuMessage.width, menuMessage.height);
+  } else if (currentState === GAME_STATE.GAMEOVER) {
+    ctx.drawImage(gameOverMessage.img, gameOverMessage.x, gameOverMessage.y, gameOverMessage.width, gameOverMessage.height);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+async function startGame() {
+  await sprites();
+  requestAnimationFrame(gameLoop);
 }
 
 startGame();
+
+
+
